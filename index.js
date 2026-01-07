@@ -20,7 +20,7 @@ app.use(cors());
 // URL: http://localhost:3001/api/users/login
 app.use('/api/users', userRoutes);
 
-// 2. Route cho Order (Lấy danh sách đơn hàng)
+// 2. Route cho Order (Lấy danh sách đơn hàng) test
 // URL: http://localhost:3001/api/orders/all
 app.use('/api/orders', orderRoutes);
 
