@@ -1,16 +1,22 @@
-import { execute } from '../config/db.js';
+// Import biến pool từ file db.js
+// File: server_api/models/orderModel.js
+import pool from '../config/db.js';
 
 export default class orderModel {
-    // ... (Giữ nguyên hàm getAllOrders cũ)
+
+    // --- SỬA HÀM NÀY ---
     static async getAllOrders() {
-        // Câu lệnh lấy tất cả đơn hàng từ bảng orders
-        // Nếu database của bạn tên cột khác order_date, hãy sửa lại (vd: date)
-        const sql = 'SELECT * FROM orders ORDER BY order_date DESC';
+        // Cũ: SELECT * FROM orders... (Thiếu Username)
+        // Mới: JOIN với bảng users để lấy Username
+        const sql = `
+            SELECT o.*, u.Username 
+            FROM orders o 
+            JOIN users u ON o.user_id = u.id 
+            ORDER BY o.order_date DESC
+        `;
         
         try {
-            const [rows] = await execute(sql);
-            console.log("--> Lấy tất cả đơn hàng:", rows);
-            
+            const [rows] = await pool.execute(sql);
             return rows;
         } catch (error) {
             console.error("Lỗi SQL (getAllOrders):", error);
@@ -18,33 +24,39 @@ export default class orderModel {
         }
     }
 
-    // HÀM MỚI: Lấy thông tin chi tiết đơn hàng + sản phẩm
+    // ... (Hàm getOrderDetail giữ nguyên)
+
+    // 2. Hàm lấy chi tiết đơn hàng
     static async getOrderDetail(orderId) {
-        // 1. Lấy thông tin chung đơn hàng
-        const sqlOrder = `
-            SELECT o.order_id, u.Username, o.status, o.order_date, o.total_amount, o.shipping_address
-            FROM orders o
-            INNER JOIN users u ON o.user_id = u.id
-            WHERE o.order_id = ?
-        `;
-        const [orderRows] = await execute(sqlOrder, [orderId]);
-        
-        if (orderRows.length === 0) return null;
-        const orderInfo = orderRows[0];
+        try {
+            // Lấy thông tin chung
+            const sqlOrder = `
+                SELECT o.order_id, u.Username, o.status, o.order_date, o.total_amount, o.shipping_address
+                FROM orders o
+                INNER JOIN users u ON o.user_id = u.id
+                WHERE o.order_id = ?
+            `;
+            const [orderRows] = await pool.execute(sqlOrder, [orderId]);
+            
+            if (orderRows.length === 0) return null;
+            
+            // Lấy danh sách sản phẩm
+            const sqlProducts = `
+                SELECT p.Name, p.Image, od.quantity, od.price_at_purchase
+                FROM order_details od
+                INNER JOIN products p ON od.product_id = p.id
+                WHERE od.order_id = ?
+            `;
+            const [productRows] = await pool.execute(sqlProducts, [orderId]);
 
-        // 2. Lấy danh sách sản phẩm trong đơn đó
-        const sqlProducts = `
-            SELECT p.Name, p.Image, od.quantity, od.price_at_purchase
-            FROM order_details od
-            INNER JOIN products p ON od.product_id = p.id
-            WHERE od.order_id = ?
-        `;
-        const [productRows] = await execute(sqlProducts, [orderId]);
-
-        // 3. Ghép lại thành 1 object hoàn chỉnh
-        return {
-            ...orderInfo,
-            products: productRows
-        };
+            // Ghép dữ liệu
+            return {
+                ...orderRows[0],
+                products: productRows
+            };
+        } catch (error) {
+            console.error("Lỗi SQL (getOrderDetail):", error);
+            throw error;
+        }
     }
 }
