@@ -24,12 +24,17 @@ export default class orderModel {
         }
     }
 
-    static async updateStatus(orderId, newStatus) {
+static async updateStatus(orderId, newStatus) {
+        // Câu lệnh SQL cập nhật trạng thái
         const sql = 'UPDATE orders SET status = ? WHERE order_id = ?';
-        await pool.execute(sql, [newStatus, orderId]);
+        try {
+            await pool.execute(sql, [newStatus, orderId]);
+            return true;
+        } catch (error) {
+            console.error("Lỗi SQL updateStatus:", error);
+            throw error;
+        }
     }
-
-    // ... (Hàm getOrderDetail giữ nguyên)
 
     // 2. Hàm lấy chi tiết đơn hàng
     static async getOrderDetail(orderId) {

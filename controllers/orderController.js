@@ -13,9 +13,10 @@ export default class orderController {
             }
         }
 
-        static async updateStatus(req, res) {
+       static async updateStatus(req, res) {
+        console.log("--> Android yêu cầu cập nhật đơn:", req.body);
         try {
-            const { order_id, status } = req.body; // Nhận id và status mới từ Android
+            const { order_id, status } = req.body;
             await orderModel.updateStatus(order_id, status);
             res.status(200).json({ message: 'Cập nhật thành công!' });
         } catch (error) {
