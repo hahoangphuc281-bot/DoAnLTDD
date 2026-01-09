@@ -53,4 +53,14 @@ export default class userModel {
         );
         return rows.length > 0;
     }
+    // 5. Tạo user mới (Register)
+    static async create({ username, password, is_admin }) {
+        const [result] = await execute(
+            `INSERT INTO users (Username, Password, is_admin)
+             VALUES (?, ?, ?)`,
+            [username, password, is_admin]
+    );
+
+        return result.affectedRows > 0;
+    }
 }

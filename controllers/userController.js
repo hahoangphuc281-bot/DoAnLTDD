@@ -2,6 +2,8 @@ import { compare } from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import userModel from '../models/userModel.js';
 import dotenv from 'dotenv';
+import bcrypt from 'bcrypt';
+
 
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || 'mat_khau_bi_mat_cua_ban_123';
@@ -90,4 +92,51 @@ export default class userController {
             res.status(500).json({ succeeded: false, message: 'Lỗi server khi đăng xuất' });
         }
     }
+    // --- HÀM REGISTER ---
+static async register(req, res) {
+    try {
+        const { username, password } = req.body;
+
+        // 1. Validate
+        if (!username || !password) {
+            return res.status(400).json({
+                succeeded: false,
+                message: 'Thiếu username hoặc password'
+            });
+        }
+
+        // 2. Kiểm tra trùng username
+        const existingUser = await userModel.findByUsername(username);
+        if (existingUser) {
+            return res.json({
+                succeeded: false,
+                message: 'Username đã tồn tại'
+            });
+        }
+
+        // 3. Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // 4. Tạo user mới (is_admin = 0)
+        await userModel.create({
+            username,
+            password: hashedPassword,
+            is_admin: 0
+        });
+
+        // 5. Trả kết quả
+        return res.status(201).json({
+            succeeded: true,
+            message: 'Đăng ký thành công'
+        });
+
+    } catch (error) {
+        console.error("Register Error:", error);
+        return res.status(500).json({
+            succeeded: false,
+            message: 'Lỗi server'
+        });
+    }
+}
+
 }
