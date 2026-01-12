@@ -3,64 +3,75 @@ import { execute } from '../config/db.js';
 export default class userModel {
     // 1. Tìm user theo username
     static async findByUsername(username) {
-        // Lưu ý: Cột trong SQL là "Username" (viết hoa chữ U)
-        const [rows] = await execute(
-            'SELECT * FROM users WHERE Username = ? AND deleted_at IS NULL LIMIT 1', 
-            [username]
-        );
-        
-        if (rows[0]) {
-            return {
-                ...rows[0],
-                // Map lại tên field cho chuẩn với code JS hiện đại
-                id: rows[0].id,
-                username: rows[0].Username, 
-                password: rows[0].Password, // Lấy mật khẩu gốc từ DB
-                is_admin: rows[0].is_admin
-            };
+        console.log("userModel.findByUsername:", username);
+        try {
+            const [rows] = await execute(
+                'SELECT * FROM users WHERE Username = ? LIMIT 1', // bỏ deleted_at nếu bảng chưa có cột
+                [username]
+            );
+            console.log("Rows trả về:", rows);
+            
+            if (rows[0]) {
+                return {
+                    ...rows[0],
+                    id: rows[0].id,
+                    username: rows[0].Username,
+                    password: rows[0].Password,
+                    is_admin: rows[0].is_admin
+                };
+            }
+            return null;
+        } catch (err) {
+            console.error("Error in findByUsername:", err);
+            throw err; // đẩy lỗi lên controller
         }
-        return null;
     }
 
-    // 2. Tìm user theo ID (Dùng cho middleware xác thực sau này)
+    // 2. Tìm user theo ID
     static async findById(id) {
-        const [rows] = await execute('SELECT * FROM users WHERE id = ?', [id]);
-        if (rows[0]) {
-             return {
-                ...rows[0],
-                username: rows[0].Username,
-                password: rows[0].Password,
-                is_admin: rows[0].is_admin
-            };
+        try {
+            const [rows] = await execute('SELECT * FROM users WHERE id = ?', [id]);
+            if (rows[0]) {
+                return {
+                    ...rows[0],
+                    username: rows[0].Username,
+                    password: rows[0].Password,
+                    is_admin: rows[0].is_admin
+                };
+            }
+            return null;
+        } catch (err) {
+            console.error("Error in findById:", err);
+            throw err;
         }
-        return null;
     }
-
-    // 3. Logout: Lưu token vào bảng blacklist
-    static async revokeToken(token, expiresAt) {
+    static async findByEmail(email) {
+        // Lưu ý: chữ 'email' trong câu lệnh SQL phải khớp với tên cột trong Database của bạn
+        const [rows] = await execute('SELECT * FROM users WHERE email = ?', [email]);
+        return rows[0]; 
+    }
+    // 3. Tạo user mới (Register), email
+    static async create({ username, password, is_admin, email }) {
+    try {
+        // Thứ tự cột và thứ tự biến trong mảng [ ] phải khớp nhau 100%
         const [result] = await execute(
-            'INSERT INTO revoked_tokens (token, exprires_at) VALUES (?, ?)', 
-            [token, expiresAt]
+            'INSERT INTO users (Username, Password, is_admin, email) VALUES (?, ?, ?, ?)',
+            [username, password, is_admin, email]
         );
         return result.affectedRows > 0;
+    } catch (err) {
+        console.error("SQL Error tại create:", err);
+        throw err;
     }
 
-    // 4. Kiểm tra token có bị logout chưa
-    static async isTokenRevoked(token) {
-        const [rows] = await execute(
-            'SELECT id FROM revoked_tokens WHERE token = ? LIMIT 1', 
-            [token]
-        );
-        return rows.length > 0;
-    }
-    // 5. Tạo user mới (Register)
-    static async create({ username, password, is_admin }) {
-        const [result] = await execute(
-            `INSERT INTO users (Username, Password, is_admin)
-             VALUES (?, ?, ?)`,
-            [username, password, is_admin]
+}
+
+static async updatePasswordByEmail(email, password) {
+    const [result] = await execute(
+        'UPDATE users SET Password = ? WHERE Email = ?',
+        [password, email]
     );
+    return result.affectedRows > 0;
+}
 
-        return result.affectedRows > 0;
-    }
 }

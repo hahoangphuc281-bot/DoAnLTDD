@@ -94,49 +94,107 @@ export default class userController {
     }
     // --- HÀM REGISTER ---
 static async register(req, res) {
-    try {
-        const { username, password } = req.body;
+    // LỆNH MẤU CHỐT 1: Xem Server thực sự nhận được gì từ Postman/Android
+    console.log("--- Dữ liệu Body nhận được: ---", req.body);
 
-        // 1. Validate
-        if (!username || !password) {
+    try {
+        const { username, email, password } = req.body;
+
+        // LỆNH MẤU CHỐT 2: Kiểm tra nghiêm ngặt
+        // Nếu không có email, hoặc email chỉ toàn dấu cách, sẽ bị chặn ngay
+        if (!username || !email || email.trim() === "" || !password) {
+            console.log("=> Thất bại: Thiếu thông tin bắt buộc");
             return res.status(400).json({
                 succeeded: false,
-                message: 'Thiếu username hoặc password'
+                message: 'Vui lòng nhập đầy đủ Username, Email và Password'
             });
         }
 
-        // 2. Kiểm tra trùng username
+        // 3a. Kiểm tra trùng Username
         const existingUser = await userModel.findByUsername(username);
         if (existingUser) {
-            return res.json({
+            return res.status(200).json({ // Dùng 200 để App dễ xử lý logic
                 succeeded: false,
                 message: 'Username đã tồn tại'
             });
         }
 
-        // 3. Hash password
+        // 3b. Kiểm tra trùng Email
+        // Lưu ý: Đảm bảo bạn đã viết hàm findByEmail trong userModel.js
+        const existingEmail = await userModel.findByEmail(email);
+        if (existingEmail) {
+            return res.status(200).json({
+                succeeded: false,
+                message: 'Email này đã được sử dụng'
+            });
+        }
+
+        // 4. Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 4. Tạo user mới (is_admin = 0)
-        await userModel.create({
+        // 5. Tạo user mới
+        console.log("=> Đang chuẩn bị INSERT vào DB với email:", email);
+        const result = await userModel.create({
             username,
+            email,
             password: hashedPassword,
             is_admin: 0
         });
 
-        // 5. Trả kết quả
+        // 6. Trả kết quả
         return res.status(201).json({
             succeeded: true,
             message: 'Đăng ký thành công'
         });
 
     } catch (error) {
-        console.error("Register Error:", error);
+        console.error("Lỗi đăng ký tại Controller:", error);
+        return res.status(500).json({
+            succeeded: false,
+            message: 'Lỗi server nội bộ'
+        });
+    }
+}
+static async changePassword(req, res) {
+    try {
+        const { email, newPassword } = req.body;
+
+        if (!email || !newPassword) {
+            return res.status(400).json({
+                succeeded: false,
+                message: 'Thiếu dữ liệu'
+            });
+        }
+
+        // 1. Tìm user theo email
+        const user = await userModel.findByEmail(email);
+        if (!user) {
+            return res.status(404).json({
+                succeeded: false,
+                message: 'Email không tồn tại'
+            });
+        }
+
+        // 2. Hash mật khẩu mới
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // 3. Update mật khẩu
+        await userModel.updatePasswordByEmail(email, hashedPassword);
+
+        return res.json({
+            succeeded: true,
+            message: 'Đổi mật khẩu thành công'
+        });
+
+    } catch (err) {
+        console.error(err);
         return res.status(500).json({
             succeeded: false,
             message: 'Lỗi server'
         });
     }
 }
+
+
 
 }

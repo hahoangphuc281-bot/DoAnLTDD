@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 // Import các file route đã tạo
 import userRoutes from './routes/userRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+console.log("PRODUCT ROUTES LOADED");
 
 dotenv.config();
 
@@ -24,9 +26,21 @@ app.use('/api/users', userRoutes);
 // URL: http://localhost:3001/api/orders/all
 app.use('/api/orders', orderRoutes);
 
+app.use('/api/products', productRoutes);
+
+
+
 // --- CẤU HÌNH CỔNG (PORT) 3001 ---
 const PORT = process.env.PORT || 3001;
 
+// ... các dòng app.use('/api/products', ...) ở trên
+
+// Đặt route test ở ĐÂY (Trước app.listen)
+app.get('/test-go', (req, res) => {
+    res.send("Server hoàn toàn bình thường, lỗi nằm ở chỗ khác!");
+});
+
+// app.listen là dòng CUỐI CÙNG của file
 app.listen(PORT, () => {
     console.log(`Server đang chạy tại http://localhost:${PORT}`);
 });
