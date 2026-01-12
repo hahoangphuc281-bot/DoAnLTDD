@@ -7,4 +7,6 @@ const router = express.Router();
 router.post('/login', userController.login);
 router.post('/logout', userController.logout);//test
 router.post('/register', userController.register);
+router.post('/change-password', userController.changePassword);
+
 export default router;

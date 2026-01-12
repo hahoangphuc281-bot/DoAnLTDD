@@ -20,5 +20,13 @@
     "express-fileupload": "^1.5.2",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.16.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hahoangphuc281-bot/DoAnLTDD.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hahoangphuc281-bot/DoAnLTDD/issues"
+  },
+  "homepage": "https://github.com/hahoangphuc281-bot/DoAnLTDD#readme"
 }

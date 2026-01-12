@@ -1,14 +1,23 @@
-// File: routes/productRoutes.js
 import express from 'express';
-import ProductController from '../controllers/productController.js';
+// Đảm bảo KHÔNG có dấu { } quanh ProductController
+import ProductController from '../controllers/ProductController.js';
 
 const router = express.Router();
 
-// Route lấy danh sách: http://localhost:3001/api/products
-router.get('/', ProductController.getAllProducts);
+// Public
+router.get('/all', (req, res, next) => {
+    console.log(">>> Postman đang gọi vào hàm getAll...");
+    next();
+}, ProductController.getAll);
 
-// Route lấy chi tiết + đánh giá (MỚI THÊM)
-// Gọi kiểu: http://localhost:3001/api/products/detail/1
-router.get('/detail/:id', ProductController.getProductDetail);
+router.get('/search', ProductController.search);
+router.get('/category', ProductController.getByCategory);
+router.get('/brand', ProductController.getByBrand);
+router.get('/detail', ProductController.getDetail);
+
+// Protected
+router.post('/', ProductController.create);
+router.put('/', ProductController.update);
+router.delete('/', ProductController.delete);
 
 export default router;
