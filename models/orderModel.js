@@ -39,18 +39,25 @@ static async updateStatus(orderId, newStatus) {
     // 2. Hàm lấy chi tiết đơn hàng
     static async getOrderDetail(orderId) {
         try {
-            // Lấy thông tin chung
             const sqlOrder = `
-                SELECT o.order_id, u.Username, o.status, o.order_date, o.total_amount, o.shipping_address
+                SELECT 
+                    o.order_id, 
+                    u.Username, 
+                    u.phone,  -- <--- THÊM DÒNG NÀY ĐỂ LẤY SĐT
+                    o.status, 
+                    o.order_date, 
+                    o.total_amount,
+                    IFNULL(a.delivery_address, 'Địa chỉ chưa cập nhật') AS shipping_address
                 FROM orders o
-                INNER JOIN users u ON o.user_id = u.id
+                JOIN users u ON o.user_id = u.id
+                LEFT JOIN addresses a ON o.addresses_id = a.addresses_id 
                 WHERE o.order_id = ?
             `;
             const [orderRows] = await pool.execute(sqlOrder, [orderId]);
             
             if (orderRows.length === 0) return null;
             
-            // Lấy danh sách sản phẩm
+            // ... (Phần lấy sản phẩm giữ nguyên) ...
             const sqlProducts = `
                 SELECT p.Name, p.Image, od.quantity, od.price_at_purchase
                 FROM order_details od
@@ -59,7 +66,6 @@ static async updateStatus(orderId, newStatus) {
             `;
             const [productRows] = await pool.execute(sqlProducts, [orderId]);
 
-            // Ghép dữ liệu
             return {
                 ...orderRows[0],
                 products: productRows

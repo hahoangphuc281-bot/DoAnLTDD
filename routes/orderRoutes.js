@@ -1,11 +1,12 @@
 import express from 'express';
-import orderController from '../controllers/orderController.js';
+import ProductController from '../controllers/productController.js';
 
 const router = express.Router();
 
-// Định nghĩa GET
-router.get('/all', orderController.getAll);
-router.get('/detail/:id', orderController.getDetail); 
-router.post('/update-status', orderController.updateStatus);
+// Route cũ
+router.get('/', ProductController.getAllProducts);
+
+// Route MỚI: lấy chi tiết
+router.get('/detail/:id', ProductController.getProductDetail);
 
 export default router;
